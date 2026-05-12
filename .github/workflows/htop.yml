@@ -14,8 +14,4 @@ jobs:
     permissions:
       contents: write
     uses: unpins/action-build/.github/workflows/build.yml@v1
-    with:
-      package_name: 'htop'
-      package_data: true
-    secrets:
-      CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+    secrets: inherit
