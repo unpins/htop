@@ -9,14 +9,8 @@
   inputs.unpins-lib.url = "github:unpins/nix-lib/v1";
 
   outputs = { self, unpins-lib }:
-    let ulib = unpins-lib.lib;
-    in
-    ulib.mkStandaloneFlake {
+    unpins-lib.lib.mkStandaloneFlake {
       inherit self;
       name = "htop";
-      build = pkgs:
-        if pkgs.stdenv.hostPlatform.isDarwin
-        then (ulib.pkgsDarwinStatic pkgs).htop
-        else (ulib.slimLmSensors pkgs).pkgsStatic.htop;
     };
 }
