@@ -14,11 +14,10 @@
   outputs = { self, nixpkgs, unpins-lib }:
     let
       ulib = unpins-lib.lib;
+      lib = nixpkgs.lib;
 
-      # htop pulls lm_sensors on Linux. Upstream lm_sensors propagates perl +
-      # bash for sensors-detect, which we don't ship. Drop them and remove
-      # the helper scripts so they don't end up in the closure.
-      lmSensorsOverlay = final: prev: {
+      # lm_sensors propagates perl + bash for sensors-detect, which we don't ship.
+      lmSensorsOverlay = _final: prev: {
         lm_sensors = prev.lm_sensors.overrideAttrs (old: {
           propagatedBuildInputs = prev.lib.filter
             (p: !builtins.elem (p.pname or "") [ "perl" "bash" ])
@@ -32,26 +31,21 @@
 
       nixpkgsFor = ulib.forAllNative (system: import nixpkgs {
         inherit system;
-        overlays = nixpkgs.lib.optionals
-          (nixpkgs.lib.hasSuffix "linux" system)
-          [ lmSensorsOverlay ];
+        overlays = lib.optionals (lib.hasSuffix "linux" system) [ lmSensorsOverlay ];
       });
+
+      buildHtop = pkgs:
+        pkgs.pkgsStatic.htop.overrideAttrs (_: {
+          stripAllList = [ "bin" ];
+        });
     in
     {
       packages = ulib.forAllNative (system:
-        let
-          pkgs = nixpkgsFor.${system};
-        in
+        let pkgs = nixpkgsFor.${system}; in
         {
-          # pkgsStatic on Linux yields a fully static musl binary.
-          # On Darwin, libSystem must remain dynamic (Apple constraint), but
-          # everything else (ncurses, etc.) is linked statically — the result
-          # is portable across any macOS without a /nix/store.
-          # stripAllList enables -s strip on $out/bin (default is -S, which
-          # leaves part of the symbol table).
-          default = pkgs.pkgsStatic.htop.overrideAttrs (old: {
-            stripAllList = [ "bin" ];
-          });
+          default = buildHtop pkgs;
+        } // lib.optionalAttrs (system == "aarch64-darwin") {
+          "darwin-x86_64" = buildHtop pkgs.pkgsCross.x86_64-darwin;
         });
 
       apps = ulib.forAllNative (system: {
