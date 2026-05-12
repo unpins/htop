@@ -34,14 +34,18 @@
         overlays = lib.optionals (lib.hasSuffix "linux" system) [ lmSensorsOverlay ];
       });
 
-      # On Darwin (native or cross), pkgsStatic forces --disable-shared but
-      # libSystem must stay dynamic — configure link tests for access/NAN
-      # then fail. Use the regular darwin htop with ncurses static-only.
+      # On Darwin pkgsStatic breaks: libSystem must stay dynamic, but
+      # --disable-shared kills the configure link tests. Use regular
+      # darwin htop with ncurses built static-only via its own knob —
+      # ulib.staticOnlyAuto can't help because ncurses uses
+      # --with-shared/--without-shared, not --enable-shared/--disable-shared.
       buildHtop = pkgs:
         let
           htopDrv =
             if pkgs.stdenv.hostPlatform.isDarwin
-            then pkgs.htop.override { ncurses = ulib.staticOnlyAuto pkgs.ncurses; }
+            then pkgs.htop.override {
+              ncurses = pkgs.ncurses.override { enableStatic = true; };
+            }
             else pkgs.pkgsStatic.htop;
         in
         htopDrv.overrideAttrs (_: {
