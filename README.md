@@ -1,16 +1,22 @@
 # htop
 
-Standalone build of [htop](https://htop.dev/). Runs on any Linux or macOS without external dependencies.
+Standalone build of [htop](https://htop.dev/).
+
+[![CI](https://github.com/unpins/htop/actions/workflows/htop.yml/badge.svg)](https://github.com/unpins/htop/actions)
+![Linux](https://img.shields.io/badge/Linux-✓-success?logo=linux&logoColor=white)
+![macOS](https://img.shields.io/badge/macOS-✓-success?logo=apple&logoColor=white)
+
+Part of the [unpins](https://unpins.org) project — native single-binary builds with no third-party runtime dependencies.
 
 ## Installation
 
-You can install this package instantly using the [unpin](https://github.com/unpins/unpin) package manager:
+Install with [unpin](https://github.com/unpins/unpin):
 
 ```bash
 unpin htop
 ```
 
-Or run it without installing:
+Or run without installing:
 
 ```bash
 unpin run htop
@@ -23,7 +29,7 @@ nix build github:unpins/htop
 ./result/bin/htop
 ```
 
-Or, in one shot:
+Or run directly:
 
 ```bash
 nix run github:unpins/htop
@@ -31,6 +37,6 @@ nix run github:unpins/htop
 
 The first invocation will offer to add the [unpins.cachix.org](https://unpins.cachix.org) substituter so most pulls come pre-built.
 
-## Manual Download
+## Manual download
 
-Standalone binaries and data packages are available on the [Releases](https://github.com/unpins/htop/releases) page.
+The [Releases](https://github.com/unpins/htop/releases) page has standalone binaries and a `.tar.zst` data archive (man pages and completions) for manual download.
