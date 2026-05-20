@@ -22,10 +22,26 @@
         let
           p = pkgs.pkgsStatic;
           ncursesFB = unpins-lib.lib.embedFallbackTerminfo p.ncurses;
+          # libcap's Make.Rules auto-enables Go bindings whenever a `go`
+          # binary is on PATH (`GOLANG ?= $(shell if go version; then
+          # yes; else no; fi)`). In our LTO chain that auto-detects yes
+          # and tries to build `goapps/web` etc. cgo'd against libcap.a;
+          # the .o files cgo generates carry fat-LTO bitcode side, and
+          # Go's cgo loader bails with `cannot load DWARF output from
+          # $WORK/.../_cgo_.o: decoding dwarf section info at offset
+          # 0x0: too short` (the bitcode-side DWARF stub isn't a real
+          # DWARF section). We don't ship libcap's Go helpers anyway —
+          # they're separate `web`/`setid`/`gowns` binaries htop never
+          # uses — so force GOLANG=no, which lets the C side of libcap
+          # (libcap.a / libpsx.a) build clean with full LTO.
+          libcapNoGo = p.libcap.overrideAttrs (old: {
+            makeFlags = (old.makeFlags or [ ]) ++ [ "GOLANG=no" ];
+          });
         in
         if p.stdenv.hostPlatform.isLinux then
           p.htop.override {
             ncurses = ncursesFB;
+            libcap = libcapNoGo;
             lm_sensors = p.lm_sensors.overrideAttrs (old: {
               propagatedBuildInputs = p.lib.filter
                 (i: !builtins.elem (i.pname or "") [ "perl" "bash" ])
