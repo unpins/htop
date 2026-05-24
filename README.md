@@ -40,3 +40,11 @@ The first invocation will offer to add the [unpins.cachix.org](https://unpins.ca
 ## Manual download
 
 The [Releases](https://github.com/unpins/htop/releases) page has standalone binaries and a `.tar.zst` data archive (man pages and completions) for manual download.
+
+## Build notes
+
+- **Windows is not supported.** htop has per-OS process backends (Linux `/proc`, macOS Mach, several BSDs) but no Windows backend upstream. Cosmopolitan would only paper over that, not provide one — so we ship Linux + macOS only.
+- **Embedded terminfo fallback.** A curated set of terminfo entries (`xterm-256color`, `screen-256color`, `tmux-256color`, `linux`, `vt100`, …) is baked into the linked `libtinfo.a`, so htop renders correctly on hosts with no `/usr/share/terminfo` (scratch containers, minimal Alpine, busybox-init systems). When the host has terminfo, the system entry still wins.
+- **libcap Go bindings disabled** via `GOLANG=no`. They build `goapps/web`, `goapps/setid`, `goapps/gowns` — separate helper binaries that htop doesn't use. Skipping them keeps the build closure smaller; the C side of libcap (`libcap.a`, `libpsx.a`) is unaffected.
+- **lm_sensors `sensors-detect` script removed.** It's a Perl script that pulls perl + bash into the closure. htop only consumes `libsensors.a`, never the script, so we drop both the propagated deps and the script itself.
+- No upstream features are disabled beyond the items above.
