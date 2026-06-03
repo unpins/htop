@@ -8,18 +8,18 @@ Standalone build of [htop](https://htop.dev/).
 
 Part of the [unpins](https://unpins.org) project — native single-binary builds with no third-party runtime dependencies.
 
-## Installation
+## Usage
 
-Install with [unpin](https://github.com/unpins/unpin):
+Run the `htop` program with [unpin](https://github.com/unpins/unpin):
 
 ```bash
 unpin htop
 ```
 
-Or run without installing:
+To install it onto your PATH:
 
 ```bash
-unpin run htop
+unpin install htop
 ```
 
 ## Build locally
