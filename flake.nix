@@ -18,6 +18,18 @@
     unpins-lib.lib.mkStandaloneFlake {
       inherit self;
       name = "htop";
+
+      # Fold `htop` into the mega through the unpin-llvm engine: emits a bitcode
+      # multicall module (one program). The curated terminfo fallback is baked
+      # into libtinfo.a (embedFallbackTerminfo) — compiled-in, so it rides the
+      # module's objects automatically; ncurses (libncursesw.a/libtinfo.a) is
+      # picked up as a dep archive via inferLinkInputs.
+      engine = "unpin-llvm";
+      multicall = {
+        inferLinkInputs = true;
+        programs = [{ name = "htop"; }];
+      };
+
       build = pkgs:
         let
           p = pkgs.pkgsStatic;
