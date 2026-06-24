@@ -27,6 +27,9 @@
       engine = "unpin-llvm";
       multicall = {
         inferLinkInputs = true;
+        # Fold into the darwin (Mach-O) mega via the engine; htop's ncurses
+        # builds via the darwinHeaderStubs ttydev shim.
+        darwin = true;
         programs = [{ name = "htop"; }];
       };
 
@@ -57,6 +60,11 @@
             });
           }
         else
-          p.htop.override { ncurses = ncursesFB; };
+          # darwin: htop's platform code needs the real macOS SDK (net/if_types.h,
+          # mach/*, IOKit/CoreFoundation) — more than the engine's minimal embedded
+          # sysroot. withDarwinSdk points the engine cc at the packaged apple-sdk;
+          # htop's own configure adds the -framework flags.
+          unpins-lib.lib.withDarwinSdk pkgs
+            (p.htop.override { ncurses = ncursesFB; });
     };
 }
