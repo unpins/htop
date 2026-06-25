@@ -8,33 +8,20 @@
 
   inputs.unpins-lib.url = "github:unpins/nix-lib";
 
-  # linux: htop's lm_sensors propagates perl+bash for sensors-detect (we
-  # don't ship it). Slim both and rm the script.
-  # All platforms: bake the curated terminfo fallback list into ncurses
-  # → libtinfo.a so htop renders correctly on hosts without
-  # `/usr/share/terminfo` (scratch/Alpine/minimal). Host terminfo still
+  # Bake the curated terminfo fallback into ncurses → libtinfo.a so htop renders
+  # on hosts without /usr/share/terminfo (scratch/Alpine). Host terminfo still
   # wins when present.
   outputs = { self, unpins-lib }:
     unpins-lib.lib.mkStandaloneFlake {
       inherit self;
       name = "htop";
 
-      # Fold `htop` into the mega through the unpin-llvm engine: emits a bitcode
-      # multicall module (one program). The curated terminfo fallback is baked
-      # into libtinfo.a (embedFallbackTerminfo) — compiled-in, so it rides the
-      # module's objects automatically; ncurses (libncursesw.a/libtinfo.a) is
-      # picked up as a dep archive via inferLinkInputs.
       engine = "unpin-llvm";
       multicall = {
         inferLinkInputs = true;
-        # Fold into the darwin (Mach-O) mega via the engine. The engine is
-        # SDK-always on darwin (SDKROOT → the packaged macOS SDK), so htop's
-        # platform code gets real SDK headers (net/*, mach/*, IOKit/CoreFoundation)
-        # and its own configure adds the `-framework` flags. The per-package build
-        # links the frameworks directly; the mega relinks from bitcode, so declare
-        # them here too so the mega-link names `-framework IOKit -framework
-        # CoreFoundation` (the SDK's -F/-L come from the engine adapter).
         darwin = true;
+        # The mega relinks from bitcode, so it can't see htop's own configure
+        # -framework flags — declare them here so the mega-link names them.
         requires.frameworks = [ "IOKit" "CoreFoundation" ];
         programs = [{ name = "htop"; }];
       };
@@ -43,10 +30,8 @@
         let
           p = pkgs.pkgsStatic;
           ncursesFB = unpins-lib.lib.embedFallbackTerminfo p.ncurses;
-          # libcap's Make.Rules auto-enables Go bindings whenever a `go`
-          # binary is on PATH. The resulting goapps (`web`, `setid`,
-          # `gowns`) are separate binaries that htop never uses, so we
-          # force GOLANG=no to skip the build cost.
+          # libcap auto-enables Go bindings when `go` is on PATH, building
+          # goapps htop never uses; force GOLANG=no.
           libcapNoGo = p.libcap.overrideAttrs (old: {
             makeFlags = (old.makeFlags or [ ]) ++ [ "GOLANG=no" ];
           });
@@ -55,6 +40,8 @@
           p.htop.override {
             ncurses = ncursesFB;
             libcap = libcapNoGo;
+            # lm_sensors propagates perl+bash for sensors-detect, which we don't
+            # ship; drop them and the script.
             lm_sensors = p.lm_sensors.overrideAttrs (old: {
               propagatedBuildInputs = p.lib.filter
                 (i: !builtins.elem (i.pname or "") [ "perl" "bash" ])
@@ -66,10 +53,8 @@
             });
           }
         else
-          # darwin: the engine is SDK-always (SDKROOT → packaged macOS SDK), so
-          # htop's platform code gets net/if_types.h, mach/*, IOKit/CoreFoundation
-          # straight from the SDK and its configure adds the -framework flags. Only
-          # the curated terminfo fallback override is needed, same as linux.
+          # darwin: the SDK-always engine gives htop's platform code the SDK
+          # headers + frameworks, so only the terminfo override is needed.
           p.htop.override { ncurses = ncursesFB; };
     };
 }
