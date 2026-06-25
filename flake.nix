@@ -27,9 +27,15 @@
       engine = "unpin-llvm";
       multicall = {
         inferLinkInputs = true;
-        # Fold into the darwin (Mach-O) mega via the engine; htop's ncurses
-        # builds via the darwinHeaderStubs ttydev shim.
+        # Fold into the darwin (Mach-O) mega via the engine. The engine is
+        # SDK-always on darwin (SDKROOT → the packaged macOS SDK), so htop's
+        # platform code gets real SDK headers (net/*, mach/*, IOKit/CoreFoundation)
+        # and its own configure adds the `-framework` flags. The per-package build
+        # links the frameworks directly; the mega relinks from bitcode, so declare
+        # them here too so the mega-link names `-framework IOKit -framework
+        # CoreFoundation` (the SDK's -F/-L come from the engine adapter).
         darwin = true;
+        requires.frameworks = [ "IOKit" "CoreFoundation" ];
         programs = [{ name = "htop"; }];
       };
 
@@ -60,11 +66,10 @@
             });
           }
         else
-          # darwin: htop's platform code needs the real macOS SDK (net/if_types.h,
-          # mach/*, IOKit/CoreFoundation) — more than the engine's minimal embedded
-          # sysroot. withDarwinSdk points the engine cc at the packaged apple-sdk;
-          # htop's own configure adds the -framework flags.
-          unpins-lib.lib.withDarwinSdk pkgs
-            (p.htop.override { ncurses = ncursesFB; });
+          # darwin: the engine is SDK-always (SDKROOT → packaged macOS SDK), so
+          # htop's platform code gets net/if_types.h, mach/*, IOKit/CoreFoundation
+          # straight from the SDK and its configure adds the -framework flags. Only
+          # the curated terminfo fallback override is needed, same as linux.
+          p.htop.override { ncurses = ncursesFB; };
     };
 }
