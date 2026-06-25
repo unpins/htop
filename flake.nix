@@ -19,7 +19,6 @@
       engine = "unpin-llvm";
       multicall = {
         inferLinkInputs = true;
-        darwin = true;
         # The mega relinks from bitcode, so it can't see htop's own configure
         # -framework flags — declare them here so the mega-link names them.
         requires.frameworks = [ "IOKit" "CoreFoundation" ];
