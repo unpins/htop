@@ -18,7 +18,6 @@
 
       engine = "unpin-llvm";
       multicall = {
-        inferLinkInputs = true;
         # The mega relinks from bitcode, so it can't see htop's own configure
         # -framework flags — declare them here so the mega-link names them.
         requires.frameworks = [ "IOKit" "CoreFoundation" ];
@@ -36,7 +35,7 @@
           });
         in
         if p.stdenv.hostPlatform.isLinux then
-          p.htop.override {
+          (p.htop.override {
             ncurses = ncursesFB;
             libcap = libcapNoGo;
             # lm_sensors propagates perl+bash for sensors-detect, which we don't
@@ -50,7 +49,20 @@
                 rm -f $out/sbin/sensors-detect $out/sbin/sensors-conf-convert
               '';
             });
-          }
+          }).overrideAttrs (old: {
+            # nixpkgs' postPatch rewrites linux/LibNl.c's `dlopen("libnl-3.so")`
+            # (delay-acct, loaded at runtime) to the absolute `${libnl}/lib/...`
+            # store path — a runtime-closure leak. In a static-musl binary dlopen
+            # can't load anyway, so the path is pure dead-weight leak; restore the
+            # upstream bare sonames (libnl-3.so / .so.200, libnl-genl-3.so / .200)
+            # so nothing references the store. The feature stays enabled (it just
+            # no-ops here, as it already did), and works if ever linked dynamic.
+            postPatch = (old.postPatch or "") + ''
+              substituteInPlace linux/LibNl.c \
+                --replace-fail '${p.lib.getLib p.libnl}/lib/libnl-3.so' 'libnl-3.so' \
+                --replace-fail '${p.lib.getLib p.libnl}/lib/libnl-genl-3.so' 'libnl-genl-3.so'
+            '';
+          })
         else
           # darwin: the SDK-always engine gives htop's platform code the SDK
           # headers + frameworks, so only the terminfo override is needed.
