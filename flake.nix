@@ -27,7 +27,8 @@
       build = pkgs:
         let
           p = pkgs.pkgsStatic;
-          ncursesFB = unpins-lib.lib.embedFallbackTerminfo p.ncurses;
+          # Fallback terminfo is baked centrally for every engine ncurses, linux +
+          # darwin (native-overlay/ncurses.nix), so p.ncurses already carries it.
           # libcap auto-enables Go bindings when `go` is on PATH, building
           # goapps htop never uses; force GOLANG=no.
           libcapNoGo = p.libcap.overrideAttrs (old: {
@@ -36,7 +37,7 @@
         in
         if p.stdenv.hostPlatform.isLinux then
           (p.htop.override {
-            ncurses = ncursesFB;
+            ncurses = p.ncurses;
             libcap = libcapNoGo;
             # lm_sensors propagates perl+bash for sensors-detect, which we don't
             # ship; drop them and the script.
@@ -65,7 +66,8 @@
           })
         else
           # darwin: the SDK-always engine gives htop's platform code the SDK
-          # headers + frameworks, so only the terminfo override is needed.
-          p.htop.override { ncurses = ncursesFB; };
+          # headers + frameworks; ncurses fallback-terminfo is centralized, so
+          # plain pkgsStatic.htop is enough.
+          p.htop;
     };
 }
