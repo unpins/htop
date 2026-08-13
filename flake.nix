@@ -15,6 +15,8 @@
     unpins-lib.lib.mkStandaloneFlake {
       inherit self;
       name = "htop";
+      smoke = [ "--version" ];
+      smokePattern = "^htop [0-9]+\\.[0-9]+";
 
       engine = "unpin-llvm";
       multicall = {
