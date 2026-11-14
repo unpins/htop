@@ -8,9 +8,6 @@
 
   inputs.unpins-lib.url = "github:unpins/nix-lib";
 
-  # Bake the curated terminfo fallback into ncurses → libtinfo.a so htop renders
-  # on hosts without /usr/share/terminfo (scratch/Alpine). Host terminfo still
-  # wins when present.
   outputs = { self, unpins-lib }:
     unpins-lib.lib.mkStandaloneFlake {
       inherit self;
