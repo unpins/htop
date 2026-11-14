@@ -50,6 +50,10 @@
             # upstream bare sonames (libnl-3.so / .so.200, libnl-genl-3.so / .200)
             # so nothing references the store. The feature stays enabled (it just
             # no-ops here, as it already did), and works if ever linked dynamic.
+            # An inline edit and not a .patch: the text it matches is a store
+            # path that changes with every libnl bump, and before nixpkgs'
+            # postPatch the file still has the bare sonames, so a patch has
+            # nothing to change. --replace-fail fails loudly if either moves.
             postPatch = (old.postPatch or "") + ''
               substituteInPlace linux/LibNl.c \
                 --replace-fail '${p.lib.getLib p.libnl}/lib/libnl-3.so' 'libnl-3.so' \
