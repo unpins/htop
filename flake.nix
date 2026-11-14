@@ -31,6 +31,11 @@
         in
         if p.stdenv.hostPlatform.isLinux then
           (p.htop.override {
+            # nixpkgs turns sensors off for static builds (`sensorsSupport ?
+            # isLinux && !isStatic`), but htop's BUILD_STATIC path links
+            # libsensors directly instead of dlopen'ing it: the CPU temperature
+            # meter works.
+            sensorsSupport = true;
             # lm_sensors propagates perl+bash for sensors-detect, which we don't
             # ship; drop them and the script.
             lm_sensors = p.lm_sensors.overrideAttrs (old: {
