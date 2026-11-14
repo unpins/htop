@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- CPU temperature on Linux: F2 Setup → Display options → *Also show CPU
+  temperature* now shows it in the CPU meters.
+
 ## [3.5.1-2] - 2026-09-26
 
 ### Fixed

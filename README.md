@@ -49,7 +49,6 @@ The [Releases](https://github.com/unpins/htop/releases) page has standalone bina
 
 - **Windows is not supported.** htop has per-OS process backends (Linux `/proc`, macOS Mach, several BSDs) but no Windows backend upstream. Cosmopolitan would only paper over that, not provide one — so we ship Linux + macOS only.
 - **Embedded terminfo fallback.** A curated set of terminfo entries (`xterm-256color`, `screen-256color`, `tmux-256color`, `linux`, `vt100`, …) is baked into the linked `libtinfo.a`, so htop renders correctly on hosts with no `/usr/share/terminfo` (scratch containers, minimal Alpine, busybox-init systems). When the host has terminfo, the system entry still wins.
-- **libcap Go bindings disabled** via `GOLANG=no`. They build `goapps/web`, `goapps/setid`, `goapps/gowns` — separate helper binaries that htop doesn't use. Skipping them keeps the build closure smaller; the C side of libcap (`libcap.a`, `libpsx.a`) is unaffected.
-- **lm_sensors `sensors-detect` script removed.** It's a Perl script that pulls perl + bash into the closure. htop only consumes `libsensors.a`, never the script, so we drop both the propagated deps and the script itself.
+- **CPU temperature** (Linux): the CPU meters can show it (F2 Setup → Display options → *Also show CPU temperature*). libsensors is built in, and reads `/etc/sensors3.conf` when the host has one. nixpkgs leaves sensors out of static builds; we turn them on.
 - **Tests.** htop ships no test suite (`make check` is automake's empty no-op — the only `check`-adjacent target is a `cppcheck` lint, not a runtime harness), so `doCheck` has nothing to run. `htop -V` is the smoke floor.
-- No upstream features are disabled beyond the items above.
+- **Not included:** delay accounting (the `PERCENT_CPU_DELAY`, `PERCENT_IO_DELAY` and `PERCENT_SWAP_DELAY` columns stay empty): htop loads libnl for it at run time, and a self-contained binary cannot load libraries.
