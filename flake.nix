@@ -39,7 +39,6 @@
         in
         if p.stdenv.hostPlatform.isLinux then
           (p.htop.override {
-            ncurses = p.ncurses;
             libcap = libcapNoGo;
             # lm_sensors propagates perl+bash for sensors-detect, which we don't
             # ship; drop them and the script.
