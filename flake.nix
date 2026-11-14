@@ -28,15 +28,9 @@
           p = pkgs.pkgsStatic;
           # Fallback terminfo is baked centrally for every engine ncurses, linux +
           # darwin (native-overlay/ncurses.nix), so p.ncurses already carries it.
-          # libcap auto-enables Go bindings when `go` is on PATH, building
-          # goapps htop never uses; force GOLANG=no.
-          libcapNoGo = p.libcap.overrideAttrs (old: {
-            makeFlags = (old.makeFlags or [ ]) ++ [ "GOLANG=no" ];
-          });
         in
         if p.stdenv.hostPlatform.isLinux then
           (p.htop.override {
-            libcap = libcapNoGo;
             # lm_sensors propagates perl+bash for sensors-detect, which we don't
             # ship; drop them and the script.
             lm_sensors = p.lm_sensors.overrideAttrs (old: {
